@@ -33,8 +33,9 @@ int main(int argc, char ** argv){
 	if (access("v1.dat", F_OK) != 0) {
 	
 		printf("\nGenerating new Vector 1 values...");
-		v2 = (int*)generate_random_int_vector(SIZE,MIN_V,MAX_V);
-		save_int_vector(v2,SIZE,"v1.dat");
+		v1 = (int*)generate_random_int_vector(SIZE,MIN_V,MAX_V);
+
+		save_int_vector(v1,SIZE,"v1.dat");
 					
 
 	} else {
@@ -50,7 +51,6 @@ int main(int argc, char ** argv){
 
 	if (access("v2.dat", F_OK) != 0) {
 	
-	
 		printf("\nGenerating new Vector 2 values...");
 		v2 = (int*)generate_random_int_vector(SIZE,MIN_V,MAX_V);
 		
@@ -65,7 +65,7 @@ int main(int argc, char ** argv){
 	}
 
 #ifdef __DEBUG__
-	print_int_vector(v2,SIZE,3);
+	print_int_vector(v1,SIZE,3);
 #endif
 
 	vR = bucketSortSerial( v1, SIZE );
@@ -73,7 +73,7 @@ int main(int argc, char ** argv){
 
 #ifdef __DEBUG__
 	printf("\nResulting vector ordenation:");
-	print_int_vector(v1,SIZE,3);
+	print_int_vector(v2,SIZE,3);
 #endif	
 
 	if (access("vR_1.dat", F_OK) != 0) {
