@@ -14,10 +14,12 @@
 #define MIN_V 1
 #define MAX_V 1000
 
-// Descomente esta linha abaixo para imprimir valores dos vetores
+
 #define __DEBUG__
 
 
+int shellSortSerial(int *array, int tamanho);
+int shellSortParalelo(int *array, int tamanho);
 
 
 int main(int argc, char ** argv){
@@ -64,8 +66,8 @@ int main(int argc, char ** argv){
 	print_int_vector(v2,SIZE,3);
 #endif
 
-	vR = bucketSortSerial( v1, SIZE );
-	vR = bucketSortParalelo( v2, SIZE );
+	vR = shellSortSerial( v1, SIZE );
+	vR = shellSortParalelo( v2, SIZE );
 
 #ifdef __DEBUG__
 	printf("\nResulting vector ordenation:");
@@ -74,18 +76,12 @@ int main(int argc, char ** argv){
 
 	if (access("vR_1.dat", F_OK) != 0) {
 
-		/*
-		Primeira execucao (serial), salva a resposta
-		*/
 		save_int_vector(vR,SIZE,"vR_1.dat");
 		
 		printf("\nSerial result saved");
 
 	} else {
 		
-		/* 
-			Segunda e sucessivas execucoes (paralelas): salva a resposta e compara com a anterior
-		*/
 		save_int_vector(vR,SIZE, "vR_2.dat");
 		
 		printf("\nParallel result saved - comparing serial and parallel outputs ...");
@@ -109,7 +105,7 @@ int main(int argc, char ** argv){
 }
 
 
-void shellSortSerial(int array[], int tamanho) {
+int shellSortSerial(int *array, int tamanho) {
     for (int intervalo = tamanho / 2; intervalo > 0; intervalo /= 2) {
         for (int i = intervalo; i < tamanho; i++) {
             int chave = array[i];
@@ -123,9 +119,11 @@ void shellSortSerial(int array[], int tamanho) {
             array[j] = chave;
         }
     }
+
+	return array;
 }
 
-void shellSortParalelo(int array[], int tamanho) {
+int shellSortParalelo(int *array, int tamanho) {
     for (int intervalo = tamanho / 2; intervalo > 0; intervalo /= 2) {
         #pragma omp parallel for shared(array, tamanho, intervalo) default(none)
         for (int i = intervalo; i < tamanho; i++) {
@@ -140,4 +138,6 @@ void shellSortParalelo(int array[], int tamanho) {
             array[j] = chave;
         }
     }
+
+	return array;
 }
