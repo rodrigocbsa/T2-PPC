@@ -128,6 +128,7 @@ int main(int argc, char ** argv){
 		
 		
 	*/
+
 	mR = MatrixMult_serial( m1, m2 );		
 	mR = MatrixMult_parallel( m1, m2 );
 
