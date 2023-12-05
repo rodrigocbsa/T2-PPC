@@ -8,6 +8,8 @@
 #include <string.h>
 #include <time.h>
 
+#include <omp.h>
+
 #include <libppc.h>
 
 #define NLINES 3
@@ -49,6 +51,7 @@ double *MatrixMult_parallel(const double *m1, const double *m2){
 	double *mR = (double*)malloc(
 		sizeof(double) * NLINES * NCOLS);
 
+	#pragma omp parallel for shared(mR, m1, m2) default(none)
 	for ( long int i = 0; i < NLINES; i++ ){
 
 		for ( long int j = 0; j < NCOLS; j++ ){

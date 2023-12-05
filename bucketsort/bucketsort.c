@@ -8,6 +8,8 @@
 #include <string.h>
 #include <time.h>
 
+#include <omp.h>
+
 #include <libppc.h>
 
 #define SIZE 10
@@ -161,7 +163,7 @@ int *bucketSortParalelo(int *array, int tamanho) {
         tamanhos[i] = 0;
     }
 
-    #pragma omp parallel for shared(array, buckets, tamanhos, numBuckets) default(none)
+    #pragma omp parallel for shared(array, buckets, tamanhos, tamanho, numBuckets) default(none)
     for (int i = 0; i < tamanho; i++) {
         int indice = numBuckets * array[i] / 100;
         int thread_id = omp_get_thread_num();
@@ -174,7 +176,7 @@ int *bucketSortParalelo(int *array, int tamanho) {
     }
 
     int indiceAtual = 0;
-    #pragma omp parallel for shared(array, buckets, tamanhos, numBuckets) default(none)
+    #pragma omp parallel for shared(array, buckets, tamanhos, numBuckets, indiceAtual) default(none)
     for (int i = 0; i < numBuckets; i++) {
         for (int j = 0; j < tamanhos[i]; j++) {
             array[indiceAtual++] = buckets[i][j];
