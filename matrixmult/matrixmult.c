@@ -12,14 +12,20 @@
 
 #include <libppc.h>
 
-#define NLINES 3
+#define NLINES 400
 #define NCOLS 3
 
 // Descomente esta linha abaixo para imprimir valores das matrizes 
-#define __DEBUG__
+//#define __DEBUG__
 
 
 double *MatrixMult_serial(const double *m1, const double *m2){
+
+	/* Tempo de Execução */
+	clock_t inicio, fim;
+	double tempoDecorrido;
+	inicio = clock();
+	//
 
 	double *mR = (double*)malloc(
 		sizeof(double) * NLINES * NCOLS);
@@ -40,6 +46,12 @@ double *MatrixMult_serial(const double *m1, const double *m2){
 
 		}
 	}
+
+	/* Tempo de Execução */
+	fim = clock();
+	tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
+	printf("\nTempo de execução serial com %d NLINES: %f segundos\n",NLINES,tempoDecorrido);
+	//
 	
 	return mR;
 }
@@ -48,26 +60,35 @@ double *MatrixMult_serial(const double *m1, const double *m2){
 
 double *MatrixMult_parallel(const double *m1, const double *m2){
 
+	/* Tempo de Execução */
+	clock_t inicio, fim;
+	double tempoDecorrido;
+	inicio = clock();
+	//
+
+	int numThreads = 4;
+	omp_set_num_threads(numThreads);
+
 	double *mR = (double*)malloc(
 		sizeof(double) * NLINES * NCOLS);
 
 	#pragma omp parallel for shared(mR, m1, m2) default(none)
 	for ( long int i = 0; i < NLINES; i++ ){
-
 		for ( long int j = 0; j < NCOLS; j++ ){
-
 			// Utilize esta macro abaixo para acessar valores de matrizes em C
 			M( i , j , NCOLS, mR) = 0;
-
 			for (long int k = 0; k < NCOLS; k++ ){
-
-				M(i, j, NCOLS, mR) += 
-					M( i , k , NCOLS, m1) * M( k , j , NCOLS, m2);
-
+				M(i, j, NCOLS, mR) += M( i , k , NCOLS, m1) * M( k , j , NCOLS, m2);
 			}
 
 		}
 	}
+
+	/* Tempo de Execução */
+	fim = clock();
+	tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
+	printf("\nTempo de execução paralela com %d NLINES e %d threads: %f segundos\n",NLINES,numThreads,tempoDecorrido);
+	//
 	
 	return mR;
 }
@@ -101,7 +122,7 @@ int main(int argc, char ** argv){
 	}
 
 #ifdef __DEBUG__
-	print_double_matrix( m1 , 3, 3);
+	print_double_matrix( m1 , NLINES, NCOLS);
 #endif
 
 	if (access("m2.dat", F_OK) != 0) {
@@ -121,7 +142,7 @@ int main(int argc, char ** argv){
 	}
 
 #ifdef __DEBUG__
-	print_double_matrix( m2 , 3, 3);
+	print_double_matrix( m2 , NLINES, NCOLS);
 #endif
 	
 	/* 
@@ -132,12 +153,13 @@ int main(int argc, char ** argv){
 		
 	*/
 
-	mR = MatrixMult_serial( m1, m2 );		
+	//mR = MatrixMult_serial( m1, m2 );
 	mR = MatrixMult_parallel( m1, m2 );
+	
 
 #ifdef __DEBUG__
 	printf("\nResulting matrix multiplication:");
-	print_double_matrix( mR , 3, 3);
+	print_double_matrix( mR , NLINES, NCOLS);
 #endif	
 
 	/* 
@@ -164,6 +186,7 @@ int main(int argc, char ** argv){
 		/* 
 			Segunda e sucessivas execucoes (paralelas): salva a resposta e compara com a anterior
 		*/
+		
 		save_double_matrix( mR, NLINES, NCOLS, "mR_2.dat");
 		
 		printf("\nParallel result saved - comparing serial and parallel outputs ...");

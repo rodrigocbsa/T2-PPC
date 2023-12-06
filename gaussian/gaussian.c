@@ -12,7 +12,7 @@
 
 #include <libppc.h>
 
-#define NLINES 3
+#define NLINES 10
 #define NCOLS NLINES + 1 // Uma coluna a mais pois é dedicada aos termos independentes
 
 // Descomente esta linha abaixo para imprimir valores das matrizes 
@@ -51,7 +51,7 @@ int main(int argc, char ** argv){
 	}
 
 #ifdef __DEBUG__
-	print_double_matrix( m1 , 3, 3);
+	print_double_matrix( m1 , NLINES, NCOLS);
 #endif
 
 	if (access("m2.dat", F_OK) != 0) {
@@ -71,7 +71,7 @@ int main(int argc, char ** argv){
 	}
 
 #ifdef __DEBUG__
-	print_double_matrix( m2 , 3, 3);
+	print_double_matrix( m2 , NLINES, NCOLS);
 #endif
 	
 	/* 
@@ -87,7 +87,7 @@ int main(int argc, char ** argv){
 
 #ifdef __DEBUG__
 	printf("\nResulting matrix:");
-	print_double_matrix( mR , 3, 3);
+	print_double_matrix( mR , NLINES, NCOLS);
 #endif	
 
 	/* 
