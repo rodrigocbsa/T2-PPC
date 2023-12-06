@@ -86,7 +86,7 @@ int main(int argc, char ** argv){
 	mR = gaussEliminationParallel( m2 );
 
 #ifdef __DEBUG__
-	printf("\nResulting matrix multiplication:");
+	printf("\nResulting matrix:");
 	print_double_matrix( mR , 3, 3);
 #endif	
 
@@ -141,8 +141,11 @@ int main(int argc, char ** argv){
 
 
 double *gaussEliminationSerial(double *matrix) {
+
+	/* ENTRANDO EM REGIÃO CRÍTICA */
     for (int i = 0; i < NLINES; i++) {
         // Pivotização parcial (troca de linhas)
+		// maxRow: DEPENDÊNCIA DE DADOS
         int maxRow = i;
         for (int k = i + 1; k < NLINES; k++) {
             if (abs(M(k, i, NCOLS, matrix)) > abs(M(maxRow, i, NCOLS, matrix))) {
@@ -152,13 +155,16 @@ double *gaussEliminationSerial(double *matrix) {
 
         // Troca as linhas
         for (int k = i; k <= NLINES; k++) {
+			// temp: DEPENDÊNCIA DE DADOS
             double temp = M(i, k, NCOLS, matrix);
             M(i, k, NCOLS, matrix) = M(maxRow, k, NCOLS, matrix);
             M(maxRow, k, NCOLS, matrix) = temp;
         }
 
         // Eliminação gaussiana
+		/* ENTRANDO EM REGIÃO CRÍTICA */
         for (int k = i + 1; k < NLINES; k++) {
+			// factor: DEPENDÊNCIA DE DADOS
             double factor = M(k, i, NCOLS, matrix) / M(i, i, NCOLS, matrix);
             for (int j = i; j <= NLINES; j++) {
                 M(k, j, NCOLS, matrix) -= factor * M(i, j, NCOLS, matrix);
@@ -167,8 +173,10 @@ double *gaussEliminationSerial(double *matrix) {
     }
 
     // Substituição retroativa
+	/* ENTRANDO EM REGIÃO CRÍTICA */
     for (int i = NLINES - 1; i >= 0; i--) {
         M(i, NLINES, NCOLS, matrix) /= M(i, i, NCOLS, matrix);
+		/* ENTRANDO EM REGIÃO CRÍTICA */
         for (int k = i - 1; k >= 0; k--) {
             M(k, NLINES, NCOLS, matrix) -= M(k, i, NCOLS, matrix) * M(i, NLINES, NCOLS, matrix);
         }
