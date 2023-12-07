@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 #include <omp.h>
 
@@ -24,15 +25,14 @@
 clock_t inicio, fim;
 
 
-int *bucketSortParalelo(int *v, int tamanho);
-int *bucketSortSerial(int *v, int tamanho);
-void ordenaBucket(int bucket[], int tamanho);
+int *bucketSortParalelo(int v[], int tamanho);
+int *bucketSortSerial(int v[], int tamanho);
 
 int main(int argc, char ** argv){
 
 	srand( time(NULL) );
     
-	int *v1, *v2, *vR;
+	int *v1, *vR;
 
 	if (access("v1.dat", F_OK) != 0) {
 	
@@ -53,27 +53,8 @@ int main(int argc, char ** argv){
 	print_int_vector( v1 , SIZE, 1);
 #endif
 
-	if (access("v2.dat", F_OK) != 0) {
-	
-		printf("\nGenerating new Vector 2 values...");
-		v2 = (int*)generate_random_int_vector(SIZE,MIN_V,MAX_V);
-		
-		save_int_vector(v2,SIZE,"v2.dat");
-					
-
-	} else {
-
-		printf("\nLoading Vector 2 from file ...");
-		v2 = load_int_vector("v2.dat",SIZE);
-
-	}
-
-#ifdef __DEBUG__
-	print_int_vector(v2,SIZE, 1);
-#endif
-
 	//vR = bucketSortSerial( v1, SIZE );
-	vR = bucketSortParalelo( v2, SIZE );
+	vR = bucketSortParalelo( v1, SIZE );
 
 #ifdef __DEBUG__
 	printf("\nResulting vector ordenation:");
@@ -110,72 +91,69 @@ int main(int argc, char ** argv){
 	printf("\n");
 
 	free( v1 );
-	free( v2 );
 	free( vR );
 
 	return 0;
 }
 
 
-void ordenaBucket(int bucket[], int tamanho) {
-    for (int i = 1; i < tamanho; i++) {
-        int chave = bucket[i];
-        int j = i - 1;
-
-        while (j >= 0 && bucket[j] > chave) {
-            bucket[j + 1] = bucket[j];
-            j = j - 1;
-        }
-        bucket[j + 1] = chave;
-    }
-}
-
-int *bucketSortSerial(int *array, int tamanho) {
+int *bucketSortSerial(int arr[], int n) {
 
     /* Tempo de Execução */
     inicio = clock();
     //
 
-    
-    const int numBuckets = 10;
-    int buckets[numBuckets][tamanho];
-    int tamanhos[numBuckets];
 
-    // Preenche o array tamanhos com zeros
-    memset(tamanhos, 0, sizeof(tamanhos));
+    // declare an array of buckets
+    int *bucket = (int *)malloc(sizeof(int) * n);
 
-    for (int i = 0; i < tamanho; i++) {
-        int indice = numBuckets * array[i] / 100;
-        buckets[indice][tamanhos[indice]++] = array[i];
+    // calculate the number of buckets needed
+    int numBuckets = (int)sqrt(n);
+
+    // parallelize the placement of each element into its corresponding bucket
+    for (int i = 0; i < n; i++) {
+        //int bucketIndex = arr[i] / numBuckets;
+        bucket[i] = arr[i];
     }
 
-    // Aloca memória para a nova variável mR
-    int *vR = (int *)malloc(sizeof(int) * tamanho);
-
+    // parallelize the sorting of each bucket using a separate sorting algorithm
     for (int i = 0; i < numBuckets; i++) {
-        ordenaBucket(buckets[i], tamanhos[i]);
+        // use selection sort to sort each bucket
+        for (int j = i * n / numBuckets; j < (i + 1) * n / numBuckets; j++) {
+            int minIndex = j;
+            for (int k = j + 1; k < n; k++) {
+                if (bucket[k] < bucket[minIndex])
+                    minIndex = k;
+            }
+
+            // swap the elements
+            int temp = bucket[j];
+            bucket[j] = bucket[minIndex];
+            bucket[minIndex] = temp;
+        }
     }
 
-    int indiceAtual = 0;
-
+    // parallelize the combining of the sorted buckets into a single, sorted array
     for (int i = 0; i < numBuckets; i++) {
-        for (int j = 0; j < tamanhos[i]; j++) {
-            vR[indiceAtual++] = buckets[i][j];
+        for (int j = i * n / numBuckets; j < (i + 1) * n / numBuckets; j++) {
+            arr[j] = bucket[i * n / numBuckets + j % (n / numBuckets)];
         }
     }
 
     /* Tempo de Execução */
-    fim = clock();
-    long double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
+	fim = clock();
+	double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
 	salvaDados(tempoDecorrido,SIZE);
-    //
+	//
 
+    free(bucket);
 
-	return vR;
+    return arr;
 }
 
-int *bucketSortParalelo(int *array, int tamanho) {
-
+// Function to sort an array using bucket sort
+int *bucketSortParalelo(int arr[], int n) {
+    
     /* Tempo de Execução */
     inicio = clock();
     //
@@ -184,36 +162,44 @@ int *bucketSortParalelo(int *array, int tamanho) {
     omp_set_num_threads(numThreads);
 
 
-    const int numBuckets = 10;
-    int buckets[numBuckets][tamanho];
-    int tamanhos[numBuckets];
+    // declare an array of buckets
+    int *bucket = (int *)malloc(sizeof(int) * n);
 
-    // Preenche o array tamanhos com zeros
-    memset(tamanhos, 0, sizeof(tamanhos));
+    // calculate the number of buckets needed
+    int numBuckets = (int)sqrt(n);
 
-    #pragma omp parallel for shared(array, buckets, tamanho, tamanhos, numBuckets) default(none)
-    for (int i = 0; i < tamanho; i++) {
-        int indice = numBuckets * array[i] / 100;
-        buckets[indice][tamanhos[indice]++] = array[i];
+    // parallelize the placement of each element into its corresponding bucket
+    #pragma omp parallel for shared(arr, bucket, n, numBuckets) default(none)
+    for (int i = 0; i < n; i++) {
+        //int bucketIndex = arr[i] / numBuckets;
+        bucket[i] = arr[i];
     }
 
-    // Aloca memória para a nova variável mR
-    int *vR = (int *)malloc(sizeof(int) * tamanho);
-
-    #pragma omp parallel for shared(buckets, tamanhos, numBuckets, vR) default(none)
+    // parallelize the sorting of each bucket using a separate sorting algorithm
+    #pragma omp parallel for shared(bucket, n, numBuckets) default(none)
     for (int i = 0; i < numBuckets; i++) {
-        ordenaBucket(buckets[i], tamanhos[i]);
-    }
+        // use selection sort to sort each bucket
+        for (int j = i * n / numBuckets; j < (i + 1) * n / numBuckets; j++) {
+            int minIndex = j;
+            for (int k = j + 1; k < n; k++) {
+                if (bucket[k] < bucket[minIndex])
+                    minIndex = k;
+            }
 
-    int indiceAtual = 0;
-
-    #pragma omp parallel for shared(buckets, tamanhos, numBuckets, vR, indiceAtual) default(none)
-    for (int i = 0; i < numBuckets; i++) {
-        for (int j = 0; j < tamanhos[i]; j++) {
-            vR[indiceAtual++] = buckets[i][j];
+            // swap the elements
+            int temp = bucket[j];
+            bucket[j] = bucket[minIndex];
+            bucket[minIndex] = temp;
         }
     }
 
+    // parallelize the combining of the sorted buckets into a single, sorted array
+    #pragma omp parallel for shared(arr, bucket, n, numBuckets) default(none)
+    for (int i = 0; i < numBuckets; i++) {
+        for (int j = i * n / numBuckets; j < (i + 1) * n / numBuckets; j++) {
+            arr[j] = bucket[i * n / numBuckets + j % (n / numBuckets)];
+        }
+    }
 
     /* Tempo de Execução */
 	fim = clock();
@@ -221,5 +207,7 @@ int *bucketSortParalelo(int *array, int tamanho) {
 	calculaMetricas(tempoDecorrido,numThreads);
 	//
 
-	return vR;
+    free(bucket);
+
+    return arr;
 }
