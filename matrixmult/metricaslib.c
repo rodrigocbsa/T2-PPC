@@ -39,7 +39,7 @@ void calculaMetricas(double tempoDecorrido_Paralelo,int numThreads){
 	speedup = tempoDecorrido_Serial/tempoDecorrido_Paralelo;
 	eficiencia = speedup / numThreads;
 
-	printf("\n\nMetricas - %d NLINES e %d threads: \nTempo de Execucao (serial):\t%lf\nTempo de Execucao (paralelo):\t%lf\nSpeedup:\t%lf\nEficiencia:\t%lf\n",tamanho,numThreads,
+	printf("\n\nMetricas - %d ENTRADAS e %d threads: \nTempo de Execucao (serial):\t%lf\nTempo de Execucao (paralelo):\t%lf\nSpeedup:\t%lf\nEficiencia:\t%lf\n",tamanho,numThreads,
 	tempoDecorrido_Serial,tempoDecorrido_Paralelo,speedup,eficiencia);
 
 
