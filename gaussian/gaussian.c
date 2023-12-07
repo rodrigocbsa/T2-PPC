@@ -1,23 +1,21 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <wait.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
-
 #include <omp.h>
-
 #include <libppc.h>
+#include <metricaslib.h>
 
-#define NLINES 10
+#define NLINES 40
 #define NCOLS NLINES + 1 // Uma coluna a mais pois é dedicada aos termos independentes
 
 // Descomente esta linha abaixo para imprimir valores das matrizes 
-#define __DEBUG__
-
+//#define __DEBUG__
+clock_t inicio, fim;
 
 double *gaussEliminationSerial(double *matrix);
 double *gaussEliminationParallel(double *matrix);
@@ -82,7 +80,7 @@ int main(int argc, char ** argv){
 		
 	*/
 
-	mR = gaussEliminationSerial( m1 );		
+	//mR = gaussEliminationSerial( m1 );		
 	mR = gaussEliminationParallel( m2 );
 
 #ifdef __DEBUG__
@@ -141,6 +139,8 @@ int main(int argc, char ** argv){
 
 
 double *gaussEliminationSerial(double *matrix) {
+	/* Tempo de Execução */
+    inicio = clock();
 
 	/* ENTRANDO EM REGIÃO CRÍTICA */
     for (int i = 0; i < NLINES; i++) {
@@ -182,10 +182,21 @@ double *gaussEliminationSerial(double *matrix) {
         }
     }
 
+	/* Tempo de Execução */
+    fim = clock();
+    long double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
+	salvaDados(tempoDecorrido,NLINES);
+
 	return matrix;
 }
 
 double *gaussEliminationParallel(double *matrix) {
+	/* Tempo de Execução */
+    inicio = clock();
+
+	int numThreads = 2;
+    omp_set_num_threads(numThreads);
+
 	int i;
     #pragma omp parallel for shared(matrix,i) default(none)
     for (i = 0; i < NLINES; i++) {
@@ -223,6 +234,11 @@ double *gaussEliminationParallel(double *matrix) {
             M(k, NLINES, NCOLS, matrix) -= M(k, i, NCOLS, matrix) * M(i, NLINES, NCOLS, matrix);
         }
     }
+
+	/* Tempo de Execução */
+	fim = clock();
+	double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
+	calculaMetricas(tempoDecorrido,numThreads);
 
 	return matrix;
 }
