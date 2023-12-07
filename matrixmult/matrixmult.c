@@ -12,18 +12,19 @@
 
 #include <libppc.h>
 
-#define NLINES 400
+#include <metricaslib.h>
+
+#define NLINES 100
 #define NCOLS 3
 
 // Descomente esta linha abaixo para imprimir valores das matrizes 
 //#define __DEBUG__
+clock_t inicio, fim;
 
 
 double *MatrixMult_serial(const double *m1, const double *m2){
 
 	/* Tempo de Execução */
-	clock_t inicio, fim;
-	double tempoDecorrido;
 	inicio = clock();
 	//
 
@@ -49,8 +50,8 @@ double *MatrixMult_serial(const double *m1, const double *m2){
 
 	/* Tempo de Execução */
 	fim = clock();
-	tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
-	printf("\nTempo de execução serial com %d NLINES: %f segundos\n",NLINES,tempoDecorrido);
+	long double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
+	salvaDados(tempoDecorrido,NLINES);
 	//
 	
 	return mR;
@@ -61,8 +62,6 @@ double *MatrixMult_serial(const double *m1, const double *m2){
 double *MatrixMult_parallel(const double *m1, const double *m2){
 
 	/* Tempo de Execução */
-	clock_t inicio, fim;
-	double tempoDecorrido;
 	inicio = clock();
 	//
 
@@ -86,8 +85,8 @@ double *MatrixMult_parallel(const double *m1, const double *m2){
 
 	/* Tempo de Execução */
 	fim = clock();
-	tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
-	printf("\nTempo de execução paralela com %d NLINES e %d threads: %f segundos\n",NLINES,numThreads,tempoDecorrido);
+	double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
+	calculaMetricas(tempoDecorrido,numThreads);
 	//
 	
 	return mR;
