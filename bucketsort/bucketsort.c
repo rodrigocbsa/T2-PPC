@@ -14,19 +14,19 @@
 
 #include <metricaslib.h>
 
-#define SIZE 5
-#define MIN_V 1
-#define MAX_V 10000
+#define SIZE 100
+#define MIN_V 10
+#define MAX_V 100
 
 // Descomente esta linha abaixo para imprimir valores dos vetores
-#define __DEBUG__
+//#define __DEBUG__
 
 clock_t inicio, fim;
 
 
 int *bucketSortParalelo(int *v, int tamanho);
 int *bucketSortSerial(int *v, int tamanho);
-void ordenaBucket(int *bucket, int tamanho);
+void ordenaBucket(int bucket[], int tamanho);
 
 int main(int argc, char ** argv){
 
@@ -50,7 +50,7 @@ int main(int argc, char ** argv){
 	}
 
 #ifdef __DEBUG__
-	print_int_vector( v1 , SIZE, 2);
+	print_int_vector( v1 , SIZE, 1);
 #endif
 
 	if (access("v2.dat", F_OK) != 0) {
@@ -69,7 +69,7 @@ int main(int argc, char ** argv){
 	}
 
 #ifdef __DEBUG__
-	print_int_vector(v1,SIZE, 2);
+	print_int_vector(v2,SIZE, 1);
 #endif
 
 	//vR = bucketSortSerial( v1, SIZE );
@@ -77,7 +77,7 @@ int main(int argc, char ** argv){
 
 #ifdef __DEBUG__
 	printf("\nResulting vector ordenation:");
-	print_int_vector(v2,SIZE, 2);
+	print_int_vector(vR,SIZE, 1);
 #endif	
 
 	if (access("vR_1.dat", F_OK) != 0) {
@@ -117,7 +117,7 @@ int main(int argc, char ** argv){
 }
 
 
-void ordenaBucket(int *bucket, int tamanho) {
+void ordenaBucket(int bucket[], int tamanho) {
     for (int i = 1; i < tamanho; i++) {
         int chave = bucket[i];
         int j = i - 1;
@@ -141,23 +141,26 @@ int *bucketSortSerial(int *array, int tamanho) {
     int buckets[numBuckets][tamanho];
     int tamanhos[numBuckets];
 
-    for (int i = 0; i < numBuckets; i++) {
-        tamanhos[i] = 0;
-    }
+    // Preenche o array tamanhos com zeros
+    memset(tamanhos, 0, sizeof(tamanhos));
 
     for (int i = 0; i < tamanho; i++) {
         int indice = numBuckets * array[i] / 100;
         buckets[indice][tamanhos[indice]++] = array[i];
     }
 
+    // Aloca memória para a nova variável mR
+    int *vR = (int *)malloc(sizeof(int) * tamanho);
+
     for (int i = 0; i < numBuckets; i++) {
         ordenaBucket(buckets[i], tamanhos[i]);
     }
 
     int indiceAtual = 0;
+
     for (int i = 0; i < numBuckets; i++) {
         for (int j = 0; j < tamanhos[i]; j++) {
-            array[indiceAtual++] = buckets[i][j];
+            vR[indiceAtual++] = buckets[i][j];
         }
     }
 
@@ -168,7 +171,7 @@ int *bucketSortSerial(int *array, int tamanho) {
     //
 
 
-	return array;
+	return vR;
 }
 
 int *bucketSortParalelo(int *array, int tamanho) {
@@ -185,9 +188,8 @@ int *bucketSortParalelo(int *array, int tamanho) {
     int buckets[numBuckets][tamanho];
     int tamanhos[numBuckets];
 
-    for (int i = 0; i < numBuckets; i++) {
-        tamanhos[i] = 0;
-    }
+    // Preenche o array tamanhos com zeros
+    memset(tamanhos, 0, sizeof(tamanhos));
 
     #pragma omp parallel for shared(array, buckets, tamanho, tamanhos, numBuckets) default(none)
     for (int i = 0; i < tamanho; i++) {
@@ -195,16 +197,20 @@ int *bucketSortParalelo(int *array, int tamanho) {
         buckets[indice][tamanhos[indice]++] = array[i];
     }
 
-    #pragma omp parallel for shared(buckets, tamanhos, numBuckets) default(none)
+    // Aloca memória para a nova variável mR
+    int *vR = (int *)malloc(sizeof(int) * tamanho);
+
+    #pragma omp parallel for shared(buckets, tamanhos, numBuckets, vR) default(none)
     for (int i = 0; i < numBuckets; i++) {
         ordenaBucket(buckets[i], tamanhos[i]);
     }
 
     int indiceAtual = 0;
-    #pragma omp parallel for shared(array, buckets, tamanhos, numBuckets, indiceAtual) default(none)
+
+    #pragma omp parallel for shared(buckets, tamanhos, numBuckets, vR, indiceAtual) default(none)
     for (int i = 0; i < numBuckets; i++) {
         for (int j = 0; j < tamanhos[i]; j++) {
-            array[indiceAtual++] = buckets[i][j];
+            vR[indiceAtual++] = buckets[i][j];
         }
     }
 
@@ -215,5 +221,5 @@ int *bucketSortParalelo(int *array, int tamanho) {
 	calculaMetricas(tempoDecorrido,numThreads);
 	//
 
-	return array;
+	return vR;
 }
