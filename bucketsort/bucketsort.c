@@ -53,8 +53,8 @@ int main(int argc, char ** argv){
 	print_int_vector( v1 , SIZE, 1);
 #endif
 
-	vR = bucketSortSerial( v1, SIZE );
-	//vR = bucketSortParalelo( v1, SIZE );
+	//vR = bucketSortSerial( v1, SIZE );
+	vR = bucketSortParalelo( v1, SIZE );
 
 #ifdef __DEBUG__
 	printf("\nResulting vector ordenation:");

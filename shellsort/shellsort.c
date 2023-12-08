@@ -13,7 +13,7 @@
 #define MIN_V 10
 #define MAX_V 100
 
-int numThreads = 4;
+int numThreads = 2;
 
 
 //#define __DEBUG__
