@@ -31,6 +31,20 @@ double getCurrentTime() {
     return omp_get_wtime();
 }
 
+void runAndMeasure(void (*sortFunction)(int[], int), const char *label, int arr[], int size, int numThreads) {
+    double start = getCurrentTime();
+    sortFunction(arr, size);
+    double end = getCurrentTime();
+    double time = end - start;
+
+    printf("Tempo de Execucao (%s): %f\n", label, time);
+
+    // Salva os resultados em um arquivo específico para cada versão
+    FILE *file = fopen(label, "w");
+    fprintf(file, "%f", time);
+    fclose(file);
+}
+
 int main() {
     const int size = 100;
     const int numThreads = 2;
@@ -41,43 +55,47 @@ int main() {
         arr[i] = rand() % 100;
     }
 
-    // Mede o tempo de execução serial
-    double startSerial = getCurrentTime();
-    shellSortSerial(arr, size);
-    double endSerial = getCurrentTime();
-    double timeSerial = endSerial - startSerial;
+    // Executa e mede o tempo da versão serial
+    runAndMeasure(shellSortSerial, "serial_time.txt", arr, size, numThreads);
 
     // Reinicializa o vetor para a versão paralela
     for (int i = 0; i < size; i++) {
         arr[i] = rand() % 100;
     }
 
-    // Mede o tempo de execução paralela
-    double startParallel = getCurrentTime();
-    omp_set_num_threads(numThreads);
-    shellSortParallel(arr, size);
-    double endParallel = getCurrentTime();
-    double timeParallel = endParallel - startParallel;
+    // Executa e mede o tempo da versão paralela
+    runAndMeasure(shellSortParallel, "parallel_time.txt", arr, size, numThreads);
 
-    // Calcula Speedup e Eficiência
-    double speedup = timeSerial / timeParallel;
+    // Calcula Speedup e Eficiência usando os tempos salvos
+    FILE *serialFile = fopen("serial_time.txt", "r");
+    FILE *parallelFile = fopen("parallel_time.txt", "r");
+
+    double serialTime, parallelTime;
+    fscanf(serialFile, "%lf", &serialTime);
+    fscanf(parallelFile, "%lf", &parallelTime);
+
+    double speedup = serialTime / parallelTime;
     double efficiency = speedup / numThreads;
 
     // Exibe os resultados no terminal
     printf("Metricas - Tamanho do Vetor: %d e %d threads:\n", size, numThreads);
-    printf("Tempo de Execucao (serial):   %f\n", timeSerial);
-    printf("Tempo de Execucao (paralelo): %f\n", timeParallel);
+    printf("Tempo de Execucao (serial):   %f\n", serialTime);
+    printf("Tempo de Execucao (paralelo): %f\n", parallelTime);
     printf("Speedup:                      %f\n", speedup);
     printf("Eficiencia:                   %f\n", efficiency);
 
     // Salva os resultados em um arquivo
-    FILE *file = fopen("resultados.txt", "w");
-    fprintf(file, "Metricas - Tamanho do Vetor: %d e %d threads:\n", size, numThreads);
-    fprintf(file, "Tempo de Execucao (serial):   %f\n", timeSerial);
-    fprintf(file, "Tempo de Execucao (paralelo): %f\n", timeParallel);
-    fprintf(file, "Speedup:                      %f\n", speedup);
-    fprintf(file, "Eficiencia:                   %f\n", efficiency);
-    fclose(file);
+    FILE *metricsFile = fopen("metrics.txt", "w");
+    fprintf(metricsFile, "Metricas - Tamanho do Vetor: %d e %d threads:\n", size, numThreads);
+    fprintf(metricsFile, "Tempo de Execucao (serial):   %f\n", serialTime);
+    fprintf(metricsFile, "Tempo de Execucao (paralelo): %f\n", parallelTime);
+    fprintf(metricsFile, "Speedup:                      %f\n", speedup);
+    fprintf(metricsFile, "Eficiencia:                   %f\n", efficiency);
+    fclose(metricsFile);
+
+    // Fechar os arquivos utilizados
+    fclose(serialFile);
+    fclose(parallelFile);
 
     return 0;
 }

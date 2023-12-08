@@ -11,16 +11,15 @@
 #include <metricaslib.h>
 #include <math.h>
 
-#define NLINES 10
+#define NLINES 20
 #define NCOLS NLINES + 1 // Uma coluna a mais pois é dedicada aos termos independentes
 
 // Descomente esta linha abaixo para imprimir valores das matrizes 
-#define __DEBUG__
+//#define __DEBUG__
 clock_t inicio, fim;
 
 #define M(i, j, cols, matrix) matrix[(i) * (cols) + (j)]
 
-double *gaussEliminationSerial(double *matrix);
 double *gaussEliminationParallel(double *matrix);
 double *generate_random_double_matrix2(int rows, int cols);
 
@@ -36,19 +35,9 @@ int main(int argc, char ** argv) {
      * */
     double *m1, *mR;
 
-    if (access("m1.dat", F_OK) != 0) {
-
-        printf("\nGenerating new Matrix 1 values...");
-        m1 = generate_random_double_matrix2(NLINES, NCOLS);
-
-        save_double_matrix(m1, NLINES, NCOLS, "m1.dat");
-
-    } else {
-
         printf("\nLoading Matrix 1 from file ...");
         m1 = load_double_matrix("m1.dat", NLINES, NCOLS);
 
-    }
 
 #ifdef __DEBUG__
     print_double_matrix(m1, NLINES, NCOLS);
@@ -61,7 +50,6 @@ int main(int argc, char ** argv) {
         
     */
 
-    //mR = gaussEliminationSerial(m1);
 	mR = gaussEliminationParallel(m1);
 
 #ifdef __DEBUG__
@@ -69,29 +57,6 @@ int main(int argc, char ** argv) {
     print_double_matrix(mR, NLINES, NCOLS);
 #endif
 
-    /* 
-        Quando voce executar o programa da primeira vez com a implementacao serial, 
-        ele ira criar o arquivo mR_1.dat.
-        
-        Nas execucoes seguintes, utilize a versao paralela. 
-        Ele entao ira criar o arquivo mR_2.dat e comparar com o anterior a fim de verificar se 
-        a implementacao serial e paralela estao dando as mesmas respostas
-    */
-
-    if (access("mR_1.dat", F_OK) != 0) {
-
-        /*
-        Primeira execucao (serial), salva a resposta
-        */
-        save_double_matrix(mR, NLINES, NCOLS, "mR_1.dat");
-
-        printf("\nSerial result saved");
-
-    } else {
-
-        /* 
-            Segunda e sucessivas execucoes (paralelas): salva a resposta e compara com a anterior
-        */
         save_double_matrix(mR, NLINES, NCOLS, "mR_2.dat");
 
         printf("\nParallel result saved - comparing serial and parallel outputs ...");
@@ -106,7 +71,7 @@ int main(int argc, char ** argv) {
         } else {
             printf("\nERROR! Files are NOT equal! Something is wrong (probably on parallel version)!");
         }
-    }
+
 
     printf("\n");
 
@@ -116,57 +81,6 @@ int main(int argc, char ** argv) {
     return 0;
 }
 
-double *gaussEliminationSerial(double *matrix) {
-    /* Tempo de Execução */
-    inicio = clock();
-
-    /* ENTRANDO EM REGIÃO CRÍTICA */
-    for (int i = 0; i < NLINES; i++) {
-        // Pivotização parcial (troca de linhas)
-        // maxRow: DEPENDÊNCIA DE DADOS
-        int maxRow = i;
-        for (int k = i + 1; k < NLINES; k++) {
-            if (fabs(M(k, i, NCOLS, matrix)) > fabs(M(maxRow, i, NCOLS, matrix))) {
-                maxRow = k;
-            }
-        }
-
-        // Troca as linhas
-        for (int k = i; k <= NLINES; k++) {
-            // temp: DEPENDÊNCIA DE DADOS
-            double temp = M(i, k, NCOLS, matrix);
-            M(i, k, NCOLS, matrix) = M(maxRow, k, NCOLS, matrix);
-            M(maxRow, k, NCOLS, matrix) = temp;
-        }
-
-        // Eliminação gaussiana
-        /* ENTRANDO EM REGIÃO CRÍTICA */
-        for (int k = i + 1; k < NLINES; k++) {
-            // factor: DEPENDÊNCIA DE DADOS
-            double factor = M(k, i, NCOLS, matrix) / M(i, i, NCOLS, matrix);
-            for (int j = i; j <= NLINES; j++) {
-                M(k, j, NCOLS, matrix) -= factor * M(i, j, NCOLS, matrix);
-            }
-        }
-    }
-
-    // Substituição retroativa
-    /* ENTRANDO EM REGIÃO CRÍTICA */
-    for (int i = NLINES - 1; i >= 0; i--) {
-        M(i, NLINES, NCOLS, matrix) /= M(i, i, NCOLS, matrix);
-        /* ENTRANDO EM REGIÃO CRÍTICA */
-        for (int k = i - 1; k >= 0; k--) {
-            M(k, NLINES, NCOLS, matrix) -= M(k, i, NCOLS, matrix) * M(i, NLINES, NCOLS, matrix);
-        }
-    }
-
-    /* Tempo de Execução */
-    fim = clock();
-    long double tempoDecorrido = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
-    salvaDados(tempoDecorrido, NLINES);
-
-    return matrix;
-}
 
 double *gaussEliminationParallel(double *matrix) {
     /* Tempo de Execução */
