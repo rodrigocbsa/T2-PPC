@@ -27,6 +27,8 @@
 #endif
 
 
+double *generate_equation_values(int rows, int cols);
+
 /**
 	\brief Print double vector pointed by data
 

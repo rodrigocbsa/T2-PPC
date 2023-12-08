@@ -14,6 +14,31 @@
 
 #include <libppc.h>
 
+
+double *generate_equation_values(int rows, int cols) {
+    srand(time(NULL));
+
+    double *matrix = (double *)malloc(rows * cols * sizeof(double));
+
+    // Gere coeficientes aleatórios
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols - 1; j++) {
+            M(i, j, cols, matrix) = (rand() % 10) + 1; // Coeficientes aleatórios entre 1 e 10
+        }
+    }
+
+    // Gere termos independentes de forma que as equações sejam consistentes
+    for (int i = 0; i < rows; i++) {
+        M(i, cols - 1, cols, matrix) = 0;
+        for (int j = 0; j < cols - 1; j++) {
+            M(i, cols - 1, cols, matrix) -= M(i, j, cols, matrix); // Ajuste dos termos independentes
+        }
+    }
+
+    return matrix;
+}
+
+
 void print_double_vector(const double *data, long int size, long int line_break){
 
 	long int i, j;
