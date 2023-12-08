@@ -1,22 +1,22 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <wait.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
-
+#include <omp.h>
 #include <libppc.h>
+#include <metricaslib.h>
 
-#define SIZE 10
+#define SIZE 100
 #define MIN_V 1
 #define MAX_V 1000
 
 
 #define __DEBUG__
-
+clock_t inicio, fim;
 
 int shellSortSerial(int *array, int tamanho);
 int shellSortParalelo(int *array, int tamanho);
@@ -66,7 +66,8 @@ int main(int argc, char ** argv){
 	print_int_vector(v2,SIZE,3);
 #endif
 
-	vR = shellSortSerial( v1, SIZE );
+	//************************************************************	
+	//vR = shellSortSerial( v1, SIZE );
 	vR = shellSortParalelo( v2, SIZE );
 
 #ifdef __DEBUG__
@@ -106,6 +107,9 @@ int main(int argc, char ** argv){
 
 
 int shellSortSerial(int *array, int tamanho) {
+	/* Tempo de Execução */
+    inicio = clock();
+
     for (int intervalo = tamanho / 2; intervalo > 0; intervalo /= 2) {
         for (int i = intervalo; i < tamanho; i++) {
             int chave = array[i];
@@ -120,10 +124,21 @@ int shellSortSerial(int *array, int tamanho) {
         }
     }
 
+	/* Tempo de Execução */
+    fim = clock();
+    long double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
+	salvaDados(tempoDecorrido,SIZE);
+
 	return array;
 }
 
 int shellSortParalelo(int *array, int tamanho) {
+	/* Tempo de Execução */
+    inicio = clock();
+
+	int numThreads = 2;
+    omp_set_num_threads(numThreads);
+
     for (int intervalo = tamanho / 2; intervalo > 0; intervalo /= 2) {
         #pragma omp parallel for shared(array, tamanho, intervalo) default(none)
         for (int i = intervalo; i < tamanho; i++) {
@@ -138,6 +153,11 @@ int shellSortParalelo(int *array, int tamanho) {
             array[j] = chave;
         }
     }
+
+	/* Tempo de Execução */
+	fim = clock();
+	double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
+	calculaMetricas(tempoDecorrido,numThreads);
 
 	return array;
 }

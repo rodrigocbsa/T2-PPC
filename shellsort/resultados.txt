@@ -1,0 +1,5 @@
+Metricas - Tamanho do Vetor: 100 e 2 threads:
+Tempo de Execucao (serial):   0.000012
+Tempo de Execucao (paralelo): 0.000155
+Speedup:                      0.074646
+Eficiencia:                   0.037323
