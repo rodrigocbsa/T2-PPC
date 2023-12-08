@@ -196,7 +196,7 @@ int* load_int_vector(const char *filename, long int size){
 	
 	fd = fopen( filename , "rb" );
 
-	int nbytes = fread( data , sizeof(double), size, fd );
+	int nbytes = fread( data , sizeof(int), size, fd );
 
 	if ( nbytes == size ){
 

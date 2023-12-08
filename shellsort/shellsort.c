@@ -8,31 +8,33 @@
 #include <time.h>
 #include <omp.h>
 #include <libppc.h>
-#include <metricaslib.h>
 
-#define SIZE 100
-#define MIN_V 1
-#define MAX_V 1000
+#define SIZE 400
+#define MIN_V 10
+#define MAX_V 100
+
+int numThreads = 4;
 
 
-#define __DEBUG__
-clock_t inicio, fim;
+//#define __DEBUG__
 
-int shellSortSerial(int *array, int tamanho);
-int shellSortParalelo(int *array, int tamanho);
+int *shellSortSerial(int *array, int tamanho);
+int *shellSortParalelo(int *array, int tamanho);
 
 
 int main(int argc, char ** argv){
 
+	omp_set_num_threads(numThreads);
+
 	srand( time(NULL) );
     
-	int *v1, *v2, *vR;
+	int *v1, *vR;
 
 	if (access("v1.dat", F_OK) != 0) {
 	
 		printf("\nGenerating new Vector 1 values...");
-		v2 = (int*)generate_random_int_vector(SIZE,MIN_V,MAX_V);
-		save_int_vector(v2,SIZE,"v1.dat");
+		v1 = (int*)generate_random_int_vector(SIZE,MIN_V,MAX_V);
+		save_int_vector(v1,SIZE,"v1.dat");
 					
 
 	} else {
@@ -43,32 +45,12 @@ int main(int argc, char ** argv){
 	}
 
 #ifdef __DEBUG__
-	print_int_vector( v1 , SIZE, 3);
-#endif
-
-	if (access("v2.dat", F_OK) != 0) {
-	
-	
-		printf("\nGenerating new Vector 2 values...");
-		v2 = (int*)generate_random_int_vector(SIZE,MIN_V,MAX_V);
-		
-		save_int_vector(v2,SIZE,"v2.dat");
-					
-
-	} else {
-
-		printf("\nLoading Vector 2 from file ...");
-		v2 = load_int_vector("v2.dat",SIZE);
-
-	}
-
-#ifdef __DEBUG__
-	print_int_vector(v2,SIZE,3);
+	print_int_vector( v1 , SIZE, 1);
 #endif
 
 	//************************************************************	
 	//vR = shellSortSerial( v1, SIZE );
-	vR = shellSortParalelo( v2, SIZE );
+	vR = shellSortParalelo( v1, SIZE );
 
 #ifdef __DEBUG__
 	printf("\nResulting vector ordenation:");
@@ -99,16 +81,13 @@ int main(int argc, char ** argv){
 	printf("\n");
 
 	free( v1 );
-	free( v2 );
 	free( vR );
 
 	return 0;
 }
 
 
-int shellSortSerial(int *array, int tamanho) {
-	/* Tempo de Execução */
-    inicio = clock();
+int *shellSortSerial(int *array, int tamanho) {
 
     for (int intervalo = tamanho / 2; intervalo > 0; intervalo /= 2) {
         for (int i = intervalo; i < tamanho; i++) {
@@ -124,20 +103,12 @@ int shellSortSerial(int *array, int tamanho) {
         }
     }
 
-	/* Tempo de Execução */
-    fim = clock();
-    long double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
-	salvaDados(tempoDecorrido,SIZE);
-
 	return array;
 }
 
-int shellSortParalelo(int *array, int tamanho) {
-	/* Tempo de Execução */
-    inicio = clock();
+int *shellSortParalelo(int *array, int tamanho) {
 
-	int numThreads = 2;
-    omp_set_num_threads(numThreads);
+	
 
     for (int intervalo = tamanho / 2; intervalo > 0; intervalo /= 2) {
         #pragma omp parallel for shared(array, tamanho, intervalo) default(none)
@@ -153,11 +124,6 @@ int shellSortParalelo(int *array, int tamanho) {
             array[j] = chave;
         }
     }
-
-	/* Tempo de Execução */
-	fim = clock();
-	double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
-	calculaMetricas(tempoDecorrido,numThreads);
 
 	return array;
 }
