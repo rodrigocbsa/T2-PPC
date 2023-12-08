@@ -13,22 +13,22 @@
 
 #include <libppc.h>
 
-#include <metricaslib.h>
-
-#define SIZE 100
+#define SIZE 400
 #define MIN_V 10
 #define MAX_V 100
 
+int numThreads = 4;
+
 // Descomente esta linha abaixo para imprimir valores dos vetores
 //#define __DEBUG__
-
-clock_t inicio, fim;
 
 
 int *bucketSortParalelo(int v[], int tamanho);
 int *bucketSortSerial(int v[], int tamanho);
 
 int main(int argc, char ** argv){
+
+    omp_set_num_threads(numThreads);
 
 	srand( time(NULL) );
     
@@ -53,8 +53,8 @@ int main(int argc, char ** argv){
 	print_int_vector( v1 , SIZE, 1);
 #endif
 
-	//vR = bucketSortSerial( v1, SIZE );
-	vR = bucketSortParalelo( v1, SIZE );
+	vR = bucketSortSerial( v1, SIZE );
+	//vR = bucketSortParalelo( v1, SIZE );
 
 #ifdef __DEBUG__
 	printf("\nResulting vector ordenation:");
@@ -99,10 +99,6 @@ int main(int argc, char ** argv){
 
 int *bucketSortSerial(int arr[], int n) {
 
-    /* Tempo de Execução */
-    inicio = clock();
-    //
-
 
     // declare an array of buckets
     int *bucket = (int *)malloc(sizeof(int) * n);
@@ -140,12 +136,6 @@ int *bucketSortSerial(int arr[], int n) {
         }
     }
 
-    /* Tempo de Execução */
-	fim = clock();
-	double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
-	salvaDados(tempoDecorrido,SIZE);
-	//
-
     free(bucket);
 
     return arr;
@@ -153,13 +143,6 @@ int *bucketSortSerial(int arr[], int n) {
 
 // Function to sort an array using bucket sort
 int *bucketSortParalelo(int arr[], int n) {
-    
-    /* Tempo de Execução */
-    inicio = clock();
-    //
-
-    int numThreads = 2;
-    omp_set_num_threads(numThreads);
 
 
     // declare an array of buckets
@@ -200,12 +183,6 @@ int *bucketSortParalelo(int arr[], int n) {
             arr[j] = bucket[i * n / numBuckets + j % (n / numBuckets)];
         }
     }
-
-    /* Tempo de Execução */
-	fim = clock();
-	double tempoDecorrido = ((double) (fim - inicio)) / CLOCKS_PER_SEC;
-	calculaMetricas(tempoDecorrido,numThreads);
-	//
 
     free(bucket);
 
